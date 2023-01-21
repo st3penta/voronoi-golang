@@ -6,26 +6,31 @@ import (
 	"time"
 )
 
-// Voronoi is used to generate a voronoi diagram on a canvas, starting from auto-generated seed points
+// Voronoi is the engine used to generate a voronoi diagram on a canvas, starting from auto-generated seed points
 type Voronoi struct {
-	// input parameters
-	width    int
-	height   int
-	numSeeds int
 
-	// list of seeds for the Voronoi diagram
-	seeds       []Point
-	activeSeeds []Point
+	// diagram size (in pixels)
+	width  int
+	height int
 
-	// resulting diagram (to be constructed)
-	diagram [][]*Point
+	// seed configuration of the diagram
+	numSeeds int     // number of seeds for the diagram
+	seeds    []Point // list of seeds for the diagram
 
-	radius    int
-	distances [][]int
+	radius      int     // current radius of the computation
+	activeSeeds []Point // list of active seeds to take into account for the computation
+
+	distances [][]int // precomputed distances matrix (for efficiency reasons)
+
+	diagram [][]*Point // resulting diagram (initially empty, to be computed)
 }
 
 // NewVoronoi creates a new diagram struct
-func NewVoronoi(width int, height int, numSeeds int) (*Voronoi, error) {
+func NewVoronoi(
+	width int,
+	height int,
+	numSeeds int,
+) (*Voronoi, error) {
 
 	if numSeeds > width*height {
 		return nil, errors.New("Number of seeds cannot be more than the pixels in the canvas")
@@ -34,15 +39,16 @@ func NewVoronoi(width int, height int, numSeeds int) (*Voronoi, error) {
 	return &Voronoi{
 		width:       width,
 		height:      height,
-		distances:   make([][]int, 2*width+1),
 		numSeeds:    numSeeds,
 		seeds:       []Point{},
+		radius:      0,
 		activeSeeds: []Point{},
+		distances:   make([][]int, 2*width+1),
 		diagram:     make([][]*Point, width),
 	}, nil
 }
 
-// Init initializes the Voronoi diagram and generates a set of seeds
+// Init initializes the Voronoi diagram and generates a new set of seeds
 func (v *Voronoi) Init() {
 	v.initDistances()
 	v.initDiagram()
@@ -50,9 +56,11 @@ func (v *Voronoi) Init() {
 	v.initTessellation()
 }
 
-// TODO
+// initDistances populates the precomputed distances matrix,
+// to avoid recomputing the same distance values over and over
 func (v *Voronoi) initDistances() {
 
+	// the distance vectors needed by the engine can assume values up to twice their dimension  (2*width or 2*height)
 	for i := 0; i <= 2*v.width; i++ {
 
 		column := make([]int, 2*v.height+1)
@@ -105,30 +113,41 @@ func (v *Voronoi) initSeeds() {
 	}
 }
 
-// initTessellation prepares the
+// initTessellation starts the tessellation of the existing set of seeds
 func (v *Voronoi) initTessellation() {
 
 	v.radius = 0
 	v.activeSeeds = v.seeds
 
-	// fmt.Println("####################################")
-	// fmt.Println("#### Voronoi computation inited ####")
-	// fmt.Println("####################################")
+	// fmt.Println("#######################################")
+	// fmt.Println("#### Voronoi tessellation starting ####")
+	// fmt.Println("#######################################")
 }
 
+/*
+	Tessellate computes the voronoi diagram
+
+	It works on a list of 'active' seeds, where 'active' means that the seed can still extend its area.
+	At each iteration,
+*/
 func (v *Voronoi) Tessellate(hideIterations bool) error {
 
 	for len(v.activeSeeds) > 0 {
 
 		stillActiveSeeds := []Point{}
-		proximityDistances := v.getProximityDistances()
+		incrementalVectors := v.getIncrementalVectors()
 
 		for _, seed := range v.activeSeeds {
 			// fmt.Println("Iteration starting. Active seeds: ", len(v.activeSeeds))
 
 			stillActive := false
-			for _, distance := range proximityDistances {
-				stillActive = v.assignPointsToSeed(seed, v.distances[distance.X][distance.Y], distance.X, distance.Y) || stillActive
+			for _, incrementalVector := range incrementalVectors {
+				stillActive = v.assignPointsToSeed(
+					seed,
+					v.distances[incrementalVector.X][incrementalVector.Y],
+					incrementalVector.X,
+					incrementalVector.Y,
+				) || stillActive
 			}
 
 			if stillActive {
@@ -185,10 +204,16 @@ func (v *Voronoi) assignPointToSeed(seed Point, distance int, dx int, dy int) bo
 	return true
 }
 
-func (v *Voronoi) getProximityDistances() []Point {
+/*
+	getIncrementalVectors
+
+	It returns a list of points that represents the new layer of pixels of the expanding cell.
+*/
+func (v *Voronoi) getIncrementalVectors() []Point {
 	combinations := []Point{}
 
-	v.radius++
+	v.radius++ // increment the radius of the cell
+
 	dx := 0
 	dy := v.radius
 
