@@ -8,7 +8,7 @@ import (
 // VoronoiDiagram is the voronoi engine
 type VoronoiDiagram interface {
 	Init()
-	Tessellate(showIterations bool) error
+	Tessellate(hideIterations bool) error
 	ToPixels() []byte
 }
 
@@ -19,7 +19,8 @@ type Canvas struct {
 	width  int
 	height int
 
-	gameRunning bool
+	gameRunning    bool
+	hideIterations bool
 
 	voronoi VoronoiDiagram
 }
@@ -28,16 +29,18 @@ type Canvas struct {
 func NewCanvas(
 	width int,
 	height int,
+	hideIterations bool,
 	voronoi VoronoiDiagram,
 ) (*Canvas, error) {
 
 	voronoi.Init()
 
 	g := &Canvas{
-		width:       width,
-		height:      height,
-		gameRunning: true,
-		voronoi:     voronoi,
+		width:          width,
+		height:         height,
+		gameRunning:    true,
+		hideIterations: hideIterations,
+		voronoi:        voronoi,
 	}
 	return g, nil
 }
@@ -58,7 +61,7 @@ func (g *Canvas) Update() error {
 
 	if g.gameRunning {
 		// compute the voronoi tessellation
-		return g.voronoi.Tessellate(true)
+		return g.voronoi.Tessellate(g.hideIterations)
 	}
 	return nil
 }

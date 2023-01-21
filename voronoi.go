@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"math/rand"
 	"time"
 )
@@ -111,31 +110,38 @@ func (v *Voronoi) initTessellation() {
 
 	v.radius = 0
 	v.activeSeeds = v.seeds
+
 	// fmt.Println("####################################")
 	// fmt.Println("#### Voronoi computation inited ####")
 	// fmt.Println("####################################")
 }
 
-func (v *Voronoi) Tessellate(showIterations bool) error {
+func (v *Voronoi) Tessellate(hideIterations bool) error {
 
-	activeSeeds := []Point{}
-	proximityDistances := v.getProximityDistances()
+	for len(v.activeSeeds) > 0 {
 
-	for _, seed := range v.activeSeeds {
-		// fmt.Println("Iteration starting. Active seeds: ", len(v.seeds))
+		stillActiveSeeds := []Point{}
+		proximityDistances := v.getProximityDistances()
 
-		stillActive := false
-		for _, distance := range proximityDistances {
-			fmt.Println("Dists: ", v.radius, distance.X, distance.Y)
-			stillActive = v.assignPointsToSeed(seed, v.distances[distance.X][distance.Y], distance.X, distance.Y) || stillActive
+		for _, seed := range v.activeSeeds {
+			// fmt.Println("Iteration starting. Active seeds: ", len(v.activeSeeds))
+
+			stillActive := false
+			for _, distance := range proximityDistances {
+				stillActive = v.assignPointsToSeed(seed, v.distances[distance.X][distance.Y], distance.X, distance.Y) || stillActive
+			}
+
+			if stillActive {
+				stillActiveSeeds = append(stillActiveSeeds, seed)
+			}
 		}
 
-		if stillActive {
-			activeSeeds = append(activeSeeds, seed)
+		v.activeSeeds = stillActiveSeeds
+
+		if !hideIterations {
+			break
 		}
 	}
-
-	v.activeSeeds = activeSeeds
 
 	return nil
 }

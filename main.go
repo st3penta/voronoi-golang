@@ -13,6 +13,9 @@ const (
 	windowResolutionHorizontal = 500
 	windowResolutionVertical   = 500
 
+	// if true, this flag show only the final result of the voronoi tessellation
+	hideIterations = true
+
 	// number of randomly generated seeds for the voronoi diagram
 	numSeeds = 100
 )
@@ -35,6 +38,7 @@ func main() {
 	g, gErr := NewCanvas(
 		windowResolutionHorizontal,
 		windowResolutionVertical,
+		hideIterations,
 		voronoi,
 	)
 	if gErr != nil {
