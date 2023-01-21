@@ -5,23 +5,26 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
+// VoronoiDiagram is the voronoi engine
 type VoronoiDiagram interface {
 	Init()
 	Tessellate(showIterations bool) error
 	ToPixels() []byte
 }
 
-// Canvas is the
+// Canvas handles the canvas visualization
 type Canvas struct {
+
+	// resolution of the canvas
 	width  int
 	height int
 
 	gameRunning bool
 
-	voronoi  VoronoiDiagram
-	numSeeds int
+	voronoi VoronoiDiagram
 }
 
+// NewCanvas creates a canvas with a voronoi ready to start
 func NewCanvas(
 	width int,
 	height int,
@@ -39,25 +42,33 @@ func NewCanvas(
 	return g, nil
 }
 
+// Update computes a new frame
 func (g *Canvas) Update() error {
+
+	// Intercepts the Enter key and starts/stops the execution
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 		g.gameRunning = !g.gameRunning
 	}
 
+	// Intercepts the Space key
+	// and restarts the execution regenerating the seeds
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		g.voronoi.Init()
 	}
 
 	if g.gameRunning {
+		// compute the voronoi tessellation
 		return g.voronoi.Tessellate(true)
 	}
 	return nil
 }
 
+// Draw writes the computed frame as a byte sequence
 func (g *Canvas) Draw(screen *ebiten.Image) {
 	screen.WritePixels(g.voronoi.ToPixels())
 }
 
+// Layout returns the resolution of the canvas
 func (g *Canvas) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return g.width, g.height
 }

@@ -13,6 +13,7 @@ const (
 	windowResolutionHorizontal = 500
 	windowResolutionVertical   = 500
 
+	// number of randomly generated seeds for the voronoi diagram
 	numSeeds = 100
 )
 
