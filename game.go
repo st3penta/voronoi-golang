@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
@@ -15,9 +13,8 @@ type VoronoiDiagram interface {
 
 // Canvas is the
 type Canvas struct {
-	width         int
-	height        int
-	frameDuration time.Duration
+	width  int
+	height int
 
 	gameRunning bool
 
@@ -28,18 +25,16 @@ type Canvas struct {
 func NewCanvas(
 	width int,
 	height int,
-	frameDuration time.Duration,
 	voronoi VoronoiDiagram,
 ) (*Canvas, error) {
 
 	voronoi.Init()
 
 	g := &Canvas{
-		width:         width,
-		height:        height,
-		frameDuration: frameDuration,
-		gameRunning:   true,
-		voronoi:       voronoi,
+		width:       width,
+		height:      height,
+		gameRunning: true,
+		voronoi:     voronoi,
 	}
 	return g, nil
 }
@@ -60,9 +55,6 @@ func (g *Canvas) Update() error {
 }
 
 func (g *Canvas) Draw(screen *ebiten.Image) {
-	if g.frameDuration > 0 {
-		time.Sleep(g.frameDuration)
-	}
 	screen.WritePixels(g.voronoi.ToPixels())
 }
 

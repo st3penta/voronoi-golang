@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -14,8 +12,6 @@ const (
 	// resolution of the canvas shown in the window
 	windowResolutionHorizontal = 500
 	windowResolutionVertical   = 500
-
-	frameDuration = 0 * time.Millisecond
 
 	numSeeds = 100
 )
@@ -38,7 +34,6 @@ func main() {
 	g, gErr := NewCanvas(
 		windowResolutionHorizontal,
 		windowResolutionVertical,
-		frameDuration,
 		voronoi,
 	)
 	if gErr != nil {
