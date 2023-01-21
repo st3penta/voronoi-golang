@@ -142,9 +142,9 @@ func (v *Voronoi) Tessellate(hideIterations bool) error {
 
 			stillActive := false
 			for _, incrementalVector := range incrementalVectors {
-				stillActive = v.assignPointsToSeed(
+				stillActive = v.assignPointToSeed(
 					seed,
-					v.distances[incrementalVector.X][incrementalVector.Y],
+					v.distances[abs(incrementalVector.X)][abs(incrementalVector.Y)],
 					incrementalVector.X,
 					incrementalVector.Y,
 				) || stillActive
@@ -163,21 +163,6 @@ func (v *Voronoi) Tessellate(hideIterations bool) error {
 	}
 
 	return nil
-}
-
-// assignPointsToSeed assigns all the eligible points at a given distance to the seed
-func (v *Voronoi) assignPointsToSeed(seed Point, distance int, dx int, dy int) bool {
-	stillActive := false
-	stillActive = v.assignPointToSeed(seed, distance, dx, dy) || stillActive
-	stillActive = v.assignPointToSeed(seed, distance, dx, -dy) || stillActive
-	stillActive = v.assignPointToSeed(seed, distance, dy, dx) || stillActive
-	stillActive = v.assignPointToSeed(seed, distance, dy, -dx) || stillActive
-	stillActive = v.assignPointToSeed(seed, distance, -dx, dy) || stillActive
-	stillActive = v.assignPointToSeed(seed, distance, -dx, -dy) || stillActive
-	stillActive = v.assignPointToSeed(seed, distance, -dy, dx) || stillActive
-	stillActive = v.assignPointToSeed(seed, distance, -dy, -dx) || stillActive
-
-	return stillActive
 }
 
 func (v *Voronoi) assignPointToSeed(seed Point, distance int, dx int, dy int) bool {
@@ -207,7 +192,8 @@ func (v *Voronoi) assignPointToSeed(seed Point, distance int, dx int, dy int) bo
 /*
 	getIncrementalVectors
 
-	It returns a list of points that represents the new layer of pixels of the expanding cell.
+	It returns a list of points, intended as coordinates relative to the seed,
+	that represents the new layer of pixels of the expanding cell.
 */
 func (v *Voronoi) getIncrementalVectors() []Point {
 	combinations := []Point{}
@@ -218,10 +204,15 @@ func (v *Voronoi) getIncrementalVectors() []Point {
 	dy := v.radius
 
 	for dy >= dx {
-		combinations = append(combinations, Point{
-			X: dx,
-			Y: dy,
-		})
+		combinations = append(combinations, Point{X: dx, Y: dy})
+		combinations = append(combinations, Point{X: dx, Y: -dy})
+		combinations = append(combinations, Point{X: -dx, Y: dy})
+		combinations = append(combinations, Point{X: -dx, Y: -dy})
+		combinations = append(combinations, Point{X: dy, Y: dx})
+		combinations = append(combinations, Point{X: dy, Y: -dx})
+		combinations = append(combinations, Point{X: -dy, Y: dx})
+		combinations = append(combinations, Point{X: -dy, Y: -dx})
+
 		dx++
 		dy--
 	}
@@ -277,4 +268,11 @@ func (v *Voronoi) ToPixels() []byte {
 	}
 
 	return pixels
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
