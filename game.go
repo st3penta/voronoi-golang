@@ -13,27 +13,28 @@ type VoronoiDiagram interface {
 	ToPixels() []byte
 }
 
-type Game struct {
-	width  int
-	height int
-
+// Canvas is the
+type Canvas struct {
+	width         int
+	height        int
 	frameDuration time.Duration
-	gameRunning   bool
 
-	numSeeds int
+	gameRunning bool
+
 	voronoi  VoronoiDiagram
+	numSeeds int
 }
 
-func NewGame(
+func NewCanvas(
 	width int,
 	height int,
-	voronoi VoronoiDiagram,
 	frameDuration time.Duration,
-) (*Game, error) {
+	voronoi VoronoiDiagram,
+) (*Canvas, error) {
 
 	voronoi.Init()
 
-	g := &Game{
+	g := &Canvas{
 		width:         width,
 		height:        height,
 		frameDuration: frameDuration,
@@ -43,7 +44,7 @@ func NewGame(
 	return g, nil
 }
 
-func (g *Game) Update() error {
+func (g *Canvas) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 		g.gameRunning = !g.gameRunning
 	}
@@ -58,13 +59,13 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
+func (g *Canvas) Draw(screen *ebiten.Image) {
 	if g.frameDuration > 0 {
 		time.Sleep(g.frameDuration)
 	}
 	screen.WritePixels(g.voronoi.ToPixels())
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+func (g *Canvas) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return g.width, g.height
 }
