@@ -128,19 +128,25 @@ func (v *Voronoi) initTessellation() {
 	Tessellate computes the voronoi diagram
 
 	It works on a list of 'active' seeds, where 'active' means that the seed can still extend its area.
-	At each iteration,
+	At each iteration, the area of the cell corresponding to each seed gets extended by 1 pixel,
+	and each of these pixels gets assigned to that cell (unless it already belongs to a nearest seed)
 */
 func (v *Voronoi) Tessellate(hideIterations bool) error {
 
+	// the tessellation goes on until all the seeds have extended their area as much as possible
 	for len(v.activeSeeds) > 0 {
 
 		stillActiveSeeds := []Point{}
 		incrementalVectors := v.getIncrementalVectors()
 
+		// extend the area of each active seed
 		for _, seed := range v.activeSeeds {
 			// fmt.Println("Iteration starting. Active seeds: ", len(v.activeSeeds))
 
+			// stillActive monitors if the current seed is still able to extend its area
 			stillActive := false
+
+			// try to assign the points of the extended area to the current seed
 			for _, incrementalVector := range incrementalVectors {
 				stillActive = v.assignPointToSeed(
 					seed,
@@ -150,6 +156,7 @@ func (v *Voronoi) Tessellate(hideIterations bool) error {
 				) || stillActive
 			}
 
+			// populate the list of the seeds that are still active
 			if stillActive {
 				stillActiveSeeds = append(stillActiveSeeds, seed)
 			}
@@ -158,6 +165,8 @@ func (v *Voronoi) Tessellate(hideIterations bool) error {
 		v.activeSeeds = stillActiveSeeds
 
 		if !hideIterations {
+			// this breaks the computation to the current state of the tessellation,
+			// useful to show the evolution of the diagram
 			break
 		}
 	}
@@ -165,7 +174,10 @@ func (v *Voronoi) Tessellate(hideIterations bool) error {
 	return nil
 }
 
+// assignPointToSeed tries to assign a point to a seed given its relative coordinates
 func (v *Voronoi) assignPointToSeed(seed Point, distance int, dx int, dy int) bool {
+
+	// if the point is outside the diagram, ignore it
 	if seed.X+dx < 0 ||
 		seed.X+dx >= v.width ||
 		seed.Y+dy < 0 ||
@@ -174,13 +186,16 @@ func (v *Voronoi) assignPointToSeed(seed Point, distance int, dx int, dy int) bo
 		return false
 	}
 
+	// get the point from the struct containing the resulting diagram representation
 	p := v.pointFromDiagram(seed.X+dx, seed.Y+dy)
 
+	// if the point is already assigned to a cell whose seed is closer, ignore it
 	if p.Distance != nil && *p.Distance < distance {
 		// fmt.Println(fmt.Sprintf("Point (%d,%d) has already a smaller distance (%d < %d), discarded", seed.X+dx, seed.Y+dy, *p.Distance, distance))
 		return false
 	}
 
+	// the point can be assigned to the seed and stored in the resulting diagram representation
 	// fmt.Println(fmt.Sprintf("Assigning point (%d,%d) to cell with seed (%d, %d). Distance: %d", p.X, p.Y, seed.X, seed.Y, distance))
 	p.Color = seed.Color
 	p.Distance = &distance
@@ -194,16 +209,24 @@ func (v *Voronoi) assignPointToSeed(seed Point, distance int, dx int, dy int) bo
 
 	It returns a list of points, intended as coordinates relative to the seed,
 	that represents the new layer of pixels of the expanding cell.
+
+	It works by computing a 45° diagonal that has an horizontal (so not orthogonal!)
+	distance from the seed equal to the radius.
+	This diagonal is one segment (out of 8) of the diamond surrounding the seed: to compute all
+	the other segments and get the complete diamond, the algorithm generates all the possible
+	combinations of the relative coordinates
 */
 func (v *Voronoi) getIncrementalVectors() []Point {
 	combinations := []Point{}
 
 	v.radius++ // increment the radius of the cell
 
-	dx := 0
-	dy := v.radius
+	// initialize the relative coordinates that will be the first edge of the segment
+	dx := v.radius
+	dy := 0
 
-	for dy >= dx {
+	// go on until the other edge of the segment is reached
+	for dx >= dy {
 		combinations = append(combinations, Point{X: dx, Y: dy})
 		combinations = append(combinations, Point{X: dx, Y: -dy})
 		combinations = append(combinations, Point{X: -dx, Y: dy})
@@ -213,9 +236,11 @@ func (v *Voronoi) getIncrementalVectors() []Point {
 		combinations = append(combinations, Point{X: -dy, Y: dx})
 		combinations = append(combinations, Point{X: -dy, Y: -dx})
 
-		dx++
-		dy--
+		// update the relative coordinates to the next point of the segment
+		dx--
+		dy++
 	}
+
 	return combinations
 }
 
@@ -270,6 +295,7 @@ func (v *Voronoi) ToPixels() []byte {
 	return pixels
 }
 
+// abs is a utility function to compute the absolute value of an int
 func abs(x int) int {
 	if x < 0 {
 		return -x
