@@ -1,4 +1,4 @@
-# voronoi-golang
+# Voronoi Golang
 Golang implementation of the voronoi diagram
 
 
