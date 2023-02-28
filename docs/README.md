@@ -10,8 +10,8 @@ Demo:
 
 
 ## Usage
-Run the main script without any parameters.  
-Some parameters may be customized [here](../main.go#L7-L21)
+Run the bin without any parameters: `./voronoi`  
+Some parameters may be customized [here](../main.go#L7-L21), in this case you can run the source (`go run .`) or rebuild (`go build .`) and run the bin `./voronoi`
 
 
 ## Hotkeys
@@ -26,5 +26,5 @@ Basically it works by extending the cells starting from the seed points: at each
 Each cell is extended until no more points can be assigned to it. At that point the cell is flagged as `inactive` and ignored in the following iterations.  
 The algorithm goes on until there are no more active cells, meaning all the points in the canvas have been assigned to a cell.
 
-**Why this kind of solution?**
+### Why this kind of solution?
 Because it is in a sweet spot between the simple but highly inefficient brute force algorithm (that for each point in the canvas finds its nearest seed,) and the [Fortune's Algorithm](https://en.wikipedia.org/wiki/Fortune%27s_algorithm), efficient but complex
